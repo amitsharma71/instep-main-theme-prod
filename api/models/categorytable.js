@@ -1,11 +1,17 @@
 const mongoose = require("mongoose");
 
 const categorytableschema = new mongoose.Schema({
-  name: {
+  category: {
     type: String,
-  },  
-});
-categorytableschema.set("categorytableschema",true)
-const  categorytable=mongoose.model("categorytable",categorytableschema)
+    required: true,
+  },
+  images: {
+    type: String,
+  }
 
-module.exports=categorytable;
+
+});
+categorytableschema.set("categorytableschema", true);
+const categorytable = mongoose.model("categorytables", categorytableschema);
+
+module.exports = categorytable;

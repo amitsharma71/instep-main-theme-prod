@@ -13,9 +13,23 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  role: {
+  number: [
+    {
+      type: String,
+      required: true,
+    },
+  ],
+  Profileimage: {
+    type: String,
+  },
+  firstname: {
     type: String,
     required: true,
+   
+  },
+  lastname: String,
+  role: {
+    type: String,
   },
 });
 userSchema.set("timestamps", true);

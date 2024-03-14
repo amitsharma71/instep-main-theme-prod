@@ -1,17 +1,21 @@
-  const mongoose = require("mongoose");
+const mongoose = require("mongoose");
 
-  const ProductSchema = new mongoose.Schema({
-    description: {
-      type: String,
-      required: true,
-    },
-    category: {
-      type: String,
-      required: true,
-    },
-  subcategory: {
+const ProductSchema = new mongoose.Schema({
+  description: {
     type: String,
     required: true,
+  },
+  category: {
+    type: mongoose.Schema.ObjectId,
+
+    required: true,
+  },
+  subcategory: {
+    type: mongoose.Schema.ObjectId,
+    required: true,
+  },
+  type_subcategory_id: {
+    type: mongoose.Schema.ObjectId,
   },
   title: {
     type: String,
@@ -23,14 +27,15 @@
   },
   thumbnail: {
     type: String,
-    require: true,
   },
-  images: {
-    type: Array,
-    required: true,
-  },
+
+  images: [
+    {
+      type: String,
+    },
+  ],
   brand: {
-    type: String,
+    type: mongoose.Schema.ObjectId,
     required: true,
   },
   discountpercentage: {
@@ -38,16 +43,24 @@
     required: true,
   },
   stock: {
-    type: Number,
+    type: String,
     required: true,
   },
   rating: {
     type: Number,
     required: true,
   },
+  totalprice: {
+    type: String,
+    require: true,
+  },
+  tax: {
+    type: String,
+    require: true,
+  },
 });
+
 ProductSchema.set("productsof", true);
-const Userproducts = mongoose.model("Userproducts", ProductSchema);
 
-
-  module.exports = Userproducts;
+const Userproducts = mongoose.model("userproducts", ProductSchema);
+module.exports = Userproducts;

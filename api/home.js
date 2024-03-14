@@ -3,17 +3,17 @@ const mongoose = require("mongoose");
 
 const productsjson=[
       {
-        "category": "Electronics",
+        "category": "electronics",
         "subcategory": ["Smartphone", "Laptop", "Speaker"],
         "brands": ["Apple", "Samsung", "Dell", "Sony", "Bose"]
       },
       {
-        "category": "Men",
+        "category": "men",
         "subcategory": ["Men's Clothing",  "Footwear", "Glasses"],
         "brands": ["Nike", "Adidas", "Levi's", "Ray-Ban", "Puma"]
       },
       {
-        "category": "Women",
+        "category": "women",
         "subcategory": ["Women's Clothing", "Footwear", "Glasses"],
         "brands": ["Zara", "Gucci", "H&M", "Prada", "Jimmy Choo"]
       },
@@ -23,7 +23,7 @@ const productsjson=[
         "brands": ["KitchenAid", "Cuisinart", "IKEA", "H&M Home", "West Elm"]
       },
       {
-        "category": "Sports & More",
+        "category": "sports & More",
         "subcategory": ["Sports",  "Health & Wellness"],
         "brands": ["Nike", "Under Armour", "Reebok", "Adidas", "Fitbit"]
       },

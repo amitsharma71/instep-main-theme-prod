@@ -2,20 +2,36 @@ const express = require("express");
 const server = express();
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const { App } = require("realm");
+// const { App } = require("realm");
 const mongoose = require("mongoose");
 const User = require("./models/RegisterSchema");
-const jwt = require("jsonwebtoken");
-const secretkey = "secretkey";
+// const jwt = require("jsonwebtoken");
+// const secretkey = "secretkey";
 const dotenv = require("dotenv");
-// const userproducts = require("./models/ProductsSchema");
-// const categorytable = require("./models/categorytable");
+const multer = require("multer");
 const productsjson = require("./home");
 const Userproducts = require("./models/ProductsSchema");
+const Usercart = require("./models/CartSchema");
+const slidertable = require("./models/slider");
+const afterbuying = require("./models/afterbuying");
+const registerRoutes = require("./router/registerRoutes");
+const loginRoutes = require("./router/loginRouters");
+const postProductRouters = require("./router/Productpost");
+const addnewcategory = require("./router/categoryRouter");
+const addnewSubcategory = require("./router/subCategory");
+const addnewbrand = require("./router/BrandRouter");
+const addtocart = require("./router/addtocartRouter");
+const typesubcategory = require("./router/typeSubcat");
+const razorpay = require("./router/razorpay");
+const address = require("./router/addressroute");
+const profile = require("./router/useres/profilesRoute");
+const wishList = require("./router/wishlistRouter")
+const headerforuser = require("./router/adminRouter")
+const sliderRoutes = require("./router/sliderRouter")
+
 dotenv.config();
 
 const DB =
-  // "mongodb+srv://amit71instep:Amit123@cluster0.kmujczi.mongodb.net/?retryWrites=true&w=majority";
   "mongodb+srv://noutiyalgopal:MDgopal87@cluster0.mo1orsr.mongodb.net/instepcart-backend?retryWrites=true&w=majority";
 
 mongoose
@@ -27,260 +43,194 @@ mongoose
 
 server.use(cors());
 server.use(bodyParser.json());
-
+server.use(bodyParser.urlencoded({ extended: true }));
+server.use(express.json());
+server.use('/profile', express.static('profile'));
 //register api
-server.post("/api/register", async (req, res) => {
-  const { email, password, username } = req.body;
 
-  const role = "user";
-  const data = new User({
-    email: req.body.email,
-    password: req.body.password,
-    username: req.body.username,
-    role: role,
-  });
+server.use("/api", registerRoutes);
+server.use("/api", loginRoutes);
+server.use("/api", postProductRouters);
+server.use("/uploads", express.static("uploads"));
+
+// http://localhost:5000/uploads/1693806012738-Capture.PNG
+server.use("/categoryimg", express.static("categoryimg"));
+server.use("/logo", express.static("logo"));
+
+
+server.use("/api", addnewcategory);
+server.use("/api", addnewSubcategory);
+server.use("/api", addnewbrand);
+// addto cart api
+server.use("/api", addtocart);
+server.use("/api", typesubcategory)
+// /razerpay
+server.use("/api", razorpay);
+// address
+server.use("/api", address);
+
+server.use("/api", profile);
+server.use("/api", wishList);
+server.use("/api", headerforuser);
+server.use("/api", sliderRoutes);
+
+// http://localhost:5000/profile
+
+////25/08
+server.post("/api/Search", async (req, res) => {
+  console.log(req.body, "hhhhhhhhhhhh");
 
   try {
-    const useremail = await User.findOne({ email: email });
+    const keyword = req.body.name; // Get the search query parameter from the request body
 
-    if (useremail) {
-      res
-        .status(200)
-        .send({ success: false, msg: "this email is already exists" });
-    } else {
-      const dataToSave = await data.save();
-      res.status(200).send({ success: true });
-    }
+    const searchResults = await Userproducts.find({
+      // Customize this based on how you want to search (title, description, etc.)
+      $or: [
+        { title: { $regex: keyword, $options: "i" } }, // Case-insensitive search
+        { description: { $regex: keyword, $options: "i" } },
+        // { category: { $regex: keyword, $options: "i" } },
+        // { brand: { $regex: keyword, $options: "i" } },
+      ],
+    });
+
+    res.status(200).json(searchResults);
   } catch (error) {
-    res.status(400).send({ message: error.message });
+    console.error(error);
+    res.status(500).json({ error: "An error occurred while searching." });
   }
 });
 
-//login api
-server.post("/api/login", async (req, res) => {
-  const { email, password } = req.body;
 
-  const UserEmail = await User.find({ email: email });
-  if (!UserEmail) {
-    res.send({ loginStatus: false, err: "User Does not Exist" });
-  } else if (UserEmail) {
-    const LoginVeryfy =
-      UserEmail[0]?.email === email && UserEmail[0]?.password === password;
-    if (LoginVeryfy) {
-      console.log(UserEmail[0]);
+//silder .push img
 
-      const token = jwt.sign(
-        {
-          userEmail: UserEmail[0]?.email,
-          userRole: UserEmail[0]?.role,
-          username: UserEmail[0].username,
-        },
-
-        secretkey,
-        {
-          expiresIn: "8h",
-        }
-      );
-
-      res.json({ loginStatus: LoginVeryfy, tokenuigiugitygtyigtyi: token });
-      console.log(token, "token huuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu");
-    } else if (!LoginVeryfy) {
-      res.send({ loginStatus: false, err: "Password Dose not match" });
-    }
-  }
+const IMGslider = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "./slider");
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
 });
 
-//api of products addd only for admin
-server.post("/api/products", async (req, res) => {
-  const {
-    category,
-    description,
-    title,
-    price,
-    images,
-    brand,
-    rating,
-    subcategory,
-    thumbnail,
-    stock,
-    discountpercentage,
-  } = req.body;
+const uploadForImages = multer({
+  storage: IMGslider,
+});
+// server.post(
+//   "/api/sliderpost",
+//   uploadForImages.fields([{ name: "sliderimg", maxCount: 4 }]),
+//   async (req, res) => {
+//     try {
+//       const imagesFilenames = req.files["sliderimg"].map(
+//         (file) => file.filename
+//       );
+//       console.log("Images  Filenames:", imagesFilenames);
+//       const sildername = JSON.parse(req.body.sildername);
+//       console.log(sildername, "sildername");
 
-  const data = new Userproducts({
-    category: req.body.category,
-    description: req.body.description,
-    title: req.body.title,
-    price: req.body.price,
-    images: req.body.images,
-    brand: req.body.brand,
-    rating: req.body.rating,
-    subcategory: req.body.subcategory,
-    thumbnail: req.body.subcategory,
-    stock: req.body.stock,
-    discountpercentage: req.body.discountpercentage,
-  });
+//       const sliderphotos = new slidertable({
+//         images: imagesFilenames,
+//         name: sildername.name,
+//         url: sildername.url,
+//       });
+//       await sliderphotos.save();
+//       res.status(200).send("Success: slider images uploaded." + sliderphotos);
+//     } catch (error) {
+//       console.error(error);
+//       res.status(500).send({ error: error.message });
+//     }
+//   }
+// );
+
+// get slider images
+server.use("/slider", express.static("slider"));
+// http://localhost:5000/uploads/1693806012738-Capture.PNG
+
+server.post("/api/Getslider", async (req, resp) => {
   try {
-    const dataToSave = await data.save();
-    res.status(200).send({ success: true });
-  } catch (error) {
-    res.status(400).send({ message: error.message });
-  }
-});
-
-//api of products all   category and subcategory,brand for admin
-
-server.post("/api/Getproducts", async (req, resp) => {
-  const {
-    category,
-    description,
-    title,
-    price,
-    image,
-    brand,
-    rating,
-    subcategory,
-    thumbnail,
-    stock,
-    discountpercentage,
-  } = req.body;
-
-  if (req.body.category) {
-    if (req.body.category) {
-      const filter = await Userproducts.find({ category: req.body.category });
-
-      console.log(filter);
-
-      try {
-        resp.send(filter);
-      } catch (error) {
-        resp.send({ result: "no category products found" });
-      }
-    } else if (req.body.subcategory) {
-      console.log("object", req.body.subcategory);
-      const filter = await Userproducts.find({
-        subcategory: "smartphones",
-      });
-
-      console.log(filter, "filter");
-      try {
-        resp.send(filter);
-      } catch (error) {
-        resp.send({ result: "no subcategory products found" });
-      }
-    } else if (req.body.brand) {
-      const filter = await Userproducts.find({ brand: req.body.brand });
-      try {
-        resp.send(filter);
-      } catch (error) {
-        resp.send({ result: "no brand products found" });
-      }
-    }
-  } else {
-    console.log(req, resp, "console.log");
-    let products = await Userproducts.find();
-
-    if (products.length > 0) {
-      resp.send(products);
+    const imgslider = await slidertable.find();
+    if (imgslider.length > 0) {
+      resp.send(imgslider);
     } else {
       resp.send({ result: "no products found" });
     }
-  }
-});
-
-//table addd api category
-
-// server.post("/api/addproducts", async (req, res) => {
-//   const { name } = req.body;
-
-//   const arr = req.body.categoryData;
-//   console.log(arr, "aaa");
-//   categorytable.insertMany(arr);
-
-//   try {
-//     // const dataToSave = await data.save();
-//     res.status(200).send({ success: true });
-//   } catch (error) {
-//     res.status(400).send({ message: error.message });
-//   }
-// });
-
-///   category  api  next plain
-
-server.post("/api/category", async (req, res) => {
-  try {
-    res.send(productsjson);
   } catch (error) {
-    res.status(400).send({ message: error.message });
+    resp
+      .status(500)
+      .send({ error: "An error occurred while fetching products" });
   }
 });
 
-//admn api for update from id
+// after buying products  this api will
+server.post("/api/buying", async (req, resp) => {
+  const { productid, userid } = req.body;
+  console.log(productid);
+  try {
+    if (productid) {
+      const bestsell = new afterbuying({
+        productid: productid,
+        userid: userid,
+      });
 
-server.post("/api/productUpdate", async (req, res) => {
-  console.log("productUpdate ddddddddddddddddddd");
-  const {
-    category,
-    description,
-    title,
-    price,
-    image,
-    brand,
-    rating,
-    subcategory,
-    thumbnail,
-    stock,
-    discountPercentage,
-  } = req.body;
-
-  const findbyid = await Userproducts.findByIdAndUpdate(
-    { _id: req.body._id },
-    {
-      category: category,
-      description: description,
-      title: title,
-      price: price,
-      image: image,
-      brand: brand,
-      rating: rating,
-      subcategory: subcategory,
-      thumbnail: thumbnail,
-      stock: stock,
-      discountPercentage: discountPercentage,
-    },
-    {
-      new: true,
+      console.log(bestsell, "bestsell");
+      await bestsell.save();
+      resp.status(200).send("Success: products is upload" + bestsell);
+    } else {
+      console.log("i need productid");
     }
-  );
-  try {
-    res.send(findbyid);
   } catch (error) {
-    res.status(400).send({ message: error.message });
+    resp
+      .status(500)
+      .send({ error: "An error occurred while fetching products" });
   }
 });
 
-// adim api for delete
+// Top Trending Products
 
-server.post("/api/procustdlt", async (req, res) => {
+server.post("/api/Trending", async (req, resp) => {
   try {
-    const { _id } = req.body;
+    const bestproducts = await afterbuying.find();
+    // find id
+    const productIds = bestproducts.map((item) => item.productid);
+    console.log(productIds, "productIds");
 
-    // Use the findByIdAndDelete method to delete the product by its ID
-    const deletedProduct = await Userproducts.findByIdAndDelete(_id);
+    const userProductDetails = await Userproducts.find({
+      _id: { $in: productIds },
+    });
+    if (userProductDetails.length > 0) {
+      resp.send(userProductDetails);
+    } else {
+      resp.send({ result: "no bestproducts found" });
+    }
+  } catch (error) {
+    resp
+      .status(500)
+      .send({ error: "An error occurred while fetching products" });
+  }
+});
+
+// Top Trending Products delete
+
+server.post("/api/Trending/delete", async (req, res) => {
+  const { _id } = req.body;
+
+  try {
+    // Check if the product with the given _id exists and delete it
+    const deletedProduct = await afterbuying.findByIdAndDelete(_id);
 
     if (!deletedProduct) {
-      // If the product with the given ID doesn't exist, return an error response
-      return res.status(404).json({ message: "Product not found" });
+      res.status(404).json({ error: "Product not found" });
+    } else {
+      res.status(200).json({ message: "Product deleted successfully" });
     }
-
-    // Return the deleted product
-
-    res.json(deletedProduct);
-    console.log("dlet ho gya");
   } catch (error) {
-    // Handle any errors that occurred during the delete process
-    res.status(500).json({ message: "Server error" });
+    console.error(error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while deleting the product" });
   }
 });
+
+// Top Trending Products
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
